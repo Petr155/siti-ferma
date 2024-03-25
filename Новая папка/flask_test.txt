@@ -1,0 +1,135 @@
+from flask import Flask
+from flask import render_template
+import RPi.GPIO as GPIO
+import Adafruit_DHT as dht
+import mh_z19 as mh
+from datetime import datetime
+from threading import Timer
+import time
+
+
+app = Flask(__name__)
+ 
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+relay1 = 16 
+relay2 = 20
+relay3 = 21
+relay4 = 26
+DHT22_pin = 23
+sensor = 17
+CO2 = 12
+GPIO.setup(4,GPIO.IN)
+def repeater(interval, function):
+    Timer(interval, repeater, [interval, function]).start()
+    function()
+    
+def my_test():
+    if GPIO.input(4) ==0:
+     print("Низкий уровень воды")
+    else:
+     print("высокий уровень воды")
+
+     
+repeater(2.5, my_test)
+    
+
+
+# Set each pin as an output and make it low:
+GPIO.setup(relay1, GPIO.OUT)
+GPIO.setup(relay2, GPIO.OUT)
+GPIO.setup(relay3, GPIO.OUT)
+GPIO.setup(relay4, GPIO.OUT)
+GPIO.setup(17, GPIO.IN)
+GPIO.setup(CO2, GPIO.OUT)
+
+@app.route("/")
+ 
+def main1():
+   return render_template('main1.html')
+   now = datetime.datetime.now()
+   timeString = now.strftime("%dd/%mm/%yyyy %HH:%MM:%SS")
+   emplateData = {
+       'time': timeString
+       }
+   return render_template('main1.html', **emplateData)
+   
+# The function below is executed when someone requests a URL with the pin number and action in it:
+@app.route("/<pin>/<action>")
+def action(pin, action):
+   temperature = ''
+   humidity = ''
+   CO2 = ''
+   if pin == "pin1" and action == "on":
+      GPIO.output(relay1, GPIO.HIGH)
+    
+   if pin == "pin1" and action == "off":
+      GPIO.output(relay1, GPIO.LOW)
+    
+   if pin == "pin2" and action == "on":
+      GPIO.output(relay2, GPIO.HIGH)
+    
+   if pin == "pin2" and action == "off":
+      GPIO.output(relay2, GPIO.LOW)
+      
+   if pin == "pin3" and action == "on":
+      GPIO.output(relay3, GPIO.HIGH)
+    
+   if pin == "pin3" and action == "off":
+      GPIO.output(relay3, GPIO.LOW)
+      
+   if pin == "pin4" and action == "on":
+      GPIO.output(relay4, GPIO.HIGH)
+    
+   if pin == "pin4" and action == "off":
+      GPIO.output(relay4, GPIO.LOW)
+     
+   if pin == "pin5" and action == "on":
+      GPIO.output(CO2, GPIO.HIGH)
+    
+   if pin == "pin5" and action == "off":
+      GPIO.output(CO2, GPIO.LOW) 
+ 
+   if pin == "dhtpin" and action == "get":
+      humi, temp = dht.read_retry(dht.DHT22, DHT22_pin)  # Reading humidity and temperature
+      humi = '{0:0.1f}' .format(humi)
+      temp = '{0:0.1f}' .format(temp)
+      temperature = 'Тумпература: ' + temp 
+      humidity =  'Влажность: ' + humi
+      
+   if pin == "mhpin" and action == "get":
+        co2 = mh.read
+        co2 = '{0:0.1f}' .format(co2)
+        CO2 = 'CO2: ' + co2
+        
+   def repeater(interval, function):
+    Timer(interval, repeater, [interval, function]).start()
+    function()
+    
+   def my_test():
+      if GPIO.input(4) ==0:
+       print("Низкий уровень воды")
+       wather = 'Уровень воды низкий' 
+      else:
+       print("высокий уровень воды")
+       wather = 'Уровень воды высокий'
+      templeteData = {
+          'wather' : wather,
+          }
+      return render_template('main1.html', **temleteData)
+     
+      repeater(2.5, my_test)
+      #b = 'Уровень воды ' + a
+ 
+   templateData = {
+   'temperature' : temperature,
+   'humidity' : humidity,
+   #'b' : b,
+   #'co2' : CO2,
+   }
+ 
+   return render_template('main1.html', **templateData)
+ 
+if __name__ == "__main__":
+   app.run(host='0.0.0.0', port=50727, debug=True)
+
